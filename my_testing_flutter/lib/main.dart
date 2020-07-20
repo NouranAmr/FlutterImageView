@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart';
 import 'package:imageview360/imageview360.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:http/http.dart' as http;
+
+import 'CarColour.dart';
+import 'blocs/carBloc.dart';
+import 'blocs/car_states.dart';
 
 Directory _appDocsDir;
 
@@ -37,18 +40,17 @@ class MyApp extends StatelessWidget {
 
 class DemoPage extends StatefulWidget {
   DemoPage({Key key, this.title}) : super(key: key);
-
   final String title;
 
   @override
-  _DemoPageState createState() => _DemoPageState();
+  DemoPageState createState() => DemoPageState();
 }
 
-class _DemoPageState extends State<DemoPage> {
+class DemoPageState extends State<DemoPage> {
   List<Image> imageList = List<Image>();
   List<FileImage> fileImageList = List<FileImage>();
   bool autoRotate = true;
-  int rotationCount = 2;
+  int rotationCount = 1;
   int swipeSensitivity = 2;
   bool allowSwipeToRotate = true;
   RotationDirection rotationDirection = RotationDirection.anticlockwise;
@@ -58,38 +60,43 @@ class _DemoPageState extends State<DemoPage> {
   @override
   void initState() {
     //* To load images from assets after first frame build up.
-    downloadImage();
+    print("init called");
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {  downloadImage();});
+
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 72.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                (imagePrecached == true)
-                    ? ImageView360(
-                  key: UniqueKey(),
-                  imageList: fileImageList,
-                  rotationCount: rotationCount,
-                  rotationDirection: RotationDirection.anticlockwise,
-                  frameChangeDuration: Duration(milliseconds: 30),
-                  swipeSensitivity: swipeSensitivity,
-                  allowSwipeToRotate: allowSwipeToRotate,
-                  onImageIndexChanged: (currentImageIndex) {
-                    print("currentImageIndex: $currentImageIndex");
-                  },
-                )
-                    : Text("loading...."),
-              ],
+    CarBloc carBloc = CarBloc();
+    return BlocListener(
+      bloc: carBloc,
+      listener: (context, state) {
+        if (state is OnPressedState) {
+          print("OnPressedState clicked");
+          downloadImage();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+        ),
+        body: SingleChildScrollView(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 72.0),
+              child: (imagePrecached == true)
+                  ? CarColour(
+                key: UniqueKey(),
+                fileImageList: fileImageList,
+                autoRotate: autoRotate,
+                allowSwipeToRotate: allowSwipeToRotate,
+                frameChangeDuration: frameChangeDuration,
+                rotationCount: rotationCount,
+                rotationDirection: rotationDirection,
+                swipeSensitivity: swipeSensitivity,
+              )
+                  : Text("loading...."),
             ),
           ),
         ),
@@ -107,6 +114,7 @@ class _DemoPageState extends State<DemoPage> {
   }
 
   void downloadImage() async {
+    print("downloadImage function pressed");
     var e;
     try {
       for (int i = 1; i <= 36; i++) {
@@ -114,13 +122,6 @@ class _DemoPageState extends State<DemoPage> {
             "http://subaruegypt.com/wp-content/uploads/yofla360/Impreza_Dark_Blue_Pearl/images/$i.jpg",
             "subaruEgypt$i.jpg",
             i);
-
-        /*NetworkToFileImage(
-            file: fileFromDocsDir("flutter.png"),
-             url:
-             "https://upload.wikimedia.org/wikipedia/commons/1/17/Google-flutter-logo.png",
-            processError: (error) => e = error,
-            debug: true);*/
       }
       updateImageList();
     } catch (e) {
@@ -132,19 +133,16 @@ class _DemoPageState extends State<DemoPage> {
     try {
       String dir = (await getApplicationDocumentsDirectory()).path;
       String path = '$dir/$filename';
-      print("the path1 is = $path");
-      print("file location is ${File(path).existsSync()}");
+      // print("the path1 is = $path");
+      // print("file location is ${File(path).existsSync()}");
       if (File(path).existsSync()) {
-
-        print("file location exist is, index = $index");
-
+        //print("file location exist is, index = $index");
       } else if (File(path).existsSync() == false) {
         File file = new File(path);
-        print("file location not exist is, index = $index");
+        // print("file location not exist is, index = $index");
         var req = await get(Uri.parse(url));
         var bytes = req.bodyBytes;
         await file.writeAsBytes(bytes);
-
       }
     } catch (e) {
       print(e.toString());
@@ -155,16 +153,13 @@ class _DemoPageState extends State<DemoPage> {
     try {
       String dir = (await getApplicationDocumentsDirectory()).path;
       String path = '$dir/$filename';
-      print("the path2 is = $path");
+      // print("the path2 is = $path");
       File file = File(path);
       Uint8List n = await file.readAsBytes();
-      print("reading bytes $n");
+      //print("reading bytes $n");
       // Read the file.
       fileImageList.add(FileImage(file));
-      var image = Image(image: FileImage(file));
-      imageList.add(image);
-      print("image is = $image");
-      print("the file image is ${FileImage(file)}");
+      // print("the file image is ${FileImage(file)}");
     } catch (e) {
       print("ecxeption file is ${e.toString()}");
       return null;
