@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:imageview360/imageview360.dart';
-
 import 'CircluarButton.dart';
+import 'image360.dart';
 
 class CarColour extends StatefulWidget {
+  final List<String> carColor360List;
+
   final List<FileImage> fileImageList;
 
   final bool autoRotate;
@@ -15,21 +16,21 @@ class CarColour extends StatefulWidget {
 
   final bool allowSwipeToRotate;
 
-  final RotationDirection rotationDirection;
+  final Rotation_Direction rotationDirection;
   final Duration frameChangeDuration;
 
   @override
   _CarColourState createState() => _CarColourState();
 
-  CarColour(
-      {Key key,
-      @required this.fileImageList,
-      this.autoRotate,
-      this.rotationDirection,
-      this.allowSwipeToRotate,
-      this.frameChangeDuration,
-      this.rotationCount,
-      this.swipeSensitivity})
+  CarColour({Key key,
+    @required this.fileImageList,
+    this.autoRotate,
+    this.rotationDirection,
+    this.allowSwipeToRotate,
+    this.frameChangeDuration,
+    this.rotationCount,
+    this.swipeSensitivity,
+    this.carColor360List})
       : super(key: key);
 }
 
@@ -38,7 +39,7 @@ class _CarColourState extends State<CarColour> {
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
-        ImageView360(
+        Image360(
           key: UniqueKey(),
           imageList: widget.fileImageList,
           rotationCount: widget.rotationCount,
@@ -55,15 +56,28 @@ class _CarColourState extends State<CarColour> {
         Positioned(
           bottom: 5.0,
           child: Row(
-            children: <Widget>[
-              CircularButton(carColor: Color(0xffC0C0C0)),
-              CircularButton(carColor: Color(0xff808080)),
-              CircularButton(carColor: Color(0xffFF0000)),
-              CircularButton(carColor: Color(0xff00008B)),
-            ],
+              children: _buildRowList(widget.carColor360List)
           ),
         ),
       ],
     );
   }
+
+  List<Widget> _buildRowList(List<String> carColors) {
+    try{
+      List<Widget> carList = [];
+      for (var car in carColors) {
+        carList.add(new CircularButton(carColor:car));
+      }
+      return carList;
+    }
+    catch(e)
+    {
+      print(e.toString());
+      return null;
+
+    }
+
+  }
+
 }
