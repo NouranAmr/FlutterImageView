@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mytestingflutter/main.dart';
+import 'package:mytestingflutter/screens/downloadImageView.dart';
+import 'file:///G:/Nouran/Projects/FlutterImageView/my_testing_flutter/lib/screens/CarColour.dart';
+import 'file:///G:/Nouran/Projects/FlutterImageView/my_testing_flutter/lib/screens/main.dart';
 
-import 'blocs/carBloc.dart';
-import 'blocs/car_events.dart';
-import 'blocs/car_states.dart';
+import '../blocs/carBloc.dart';
+import '../blocs/car_events.dart';
+import '../blocs/car_states.dart';
 
 class CircularButton extends StatefulWidget {
   String carColor;
+  String carModelID;
+  SelectedCar selectedCar;
 
-  CircularButton({Key key, @required this.carColor}) : super(key: key);
+  CircularButton({Key key, @required this.carColor, @required this.carModelID,this.selectedCar})
+      : super(key: key);
 
   @override
   _CircularButtonState createState() => _CircularButtonState();
@@ -19,12 +24,6 @@ class _CircularButtonState extends State<CircularButton> {
   @override
   Widget build(BuildContext context) {
     CarBloc carBloc = CarBloc();
-    DemoPageState demoPageState = DemoPageState();
-    /*  var carColorCode ="0xff${widget.carColor.substring(1)}";
-    print("carColorCode is $carColorCode");
-    String valueString = carColorCode.split('(0x')[1].split(')')[0];
-    int value = int.parse(valueString, radix: 16);
-    Color newCarColor = new Color(value);*/
     return BlocListener(
       bloc: carBloc,
       listener: (context, state) {
@@ -32,18 +31,17 @@ class _CircularButtonState extends State<CircularButton> {
           print("unpressed state!!");
         }
         if (state is OnPressedState) {
-          print("widget.carColor is  ${widget.carColor}");
-          print("http://18.157.167.102:7066/Content/Images/CarMake/Image360/exterior/18/${widget.carColor.substring(1)}/");
-          key.currentState.downloadImage(
-              "http://18.157.167.102:7066/Content/Images/CarMake/Image360/exterior/18/${widget.carColor.substring(1)}/",
-              "${widget.carColor.substring(1)}subaruEgyptExterior");
+         /* var x =key.currentState.downloadImage(
+              "http://18.157.167.102:7066/Content/Images/CarMake/Image360/exterior/${widget.carModelID}/${widget.carColor.substring(1)}/",
+              "Mod${widget.carModelID}_Col${widget.carColor.substring(1)}",widget.selectedCar.selectedCarIndex());*/
+          changeCarColour(widget.carModelID, widget.carColor.substring(1), widget.selectedCar.selectedCarIndex());
         }
       },
       child: BlocProvider(
         create: (context) => carBloc,
         child: GestureDetector(
           onTap: () {
-            print("clicked!!!, bloc started");
+            print("ButtonPressed");
             carBloc.add(OnPressedEvent());
           },
           child: Padding(
@@ -64,3 +62,8 @@ class _CircularButtonState extends State<CircularButton> {
     );
   }
 }
+class SelectedCar
+{
+  int selectedCarIndex(){}
+}
+

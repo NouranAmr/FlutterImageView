@@ -1,29 +1,30 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart';
 import 'package:mytestingflutter/response/Categories.dart';
+import 'package:mytestingflutter/utils/Constants.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'CarColour.dart';
-import 'Request/GetCategoryRequest.dart';
-import 'blocs/carBloc.dart';
-import 'blocs/car_states.dart';
-import 'image360.dart';
+import '../Request/GetCategoryRequest.dart';
+import '../blocs/carBloc.dart';
+import '../image360/image360.dart';
 
-Directory _appDocsDir;
+Directory appDocsDir;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _appDocsDir = await getApplicationDocumentsDirectory();
+  appDocsDir = await getApplicationDocumentsDirectory();
   runApp(MyApp());
 }
 
 File fileFromDocsDir(String filename) {
-  String pathName = p.join(_appDocsDir.path, filename);
+  String pathName = p.join(appDocsDir.path, filename);
   return File(pathName);
 }
+
+final key = new GlobalKey<DemoPageState>();
 
 class MyApp extends StatelessWidget {
   @override
@@ -34,12 +35,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: DemoPage(key: key, title: 'ImageView360 Demo'),
+      home: DemoPage( key: key,title: 'ImageView360 Demo'),
     );
   }
 }
 
-final key = new GlobalKey<DemoPageState>();
 
 class DemoPage extends StatefulWidget {
   DemoPage({Key key, this.title}) : super(key: key);
@@ -51,6 +51,8 @@ class DemoPage extends StatefulWidget {
 
 class DemoPageState extends State<DemoPage> {
   List<String> carColors360 = List<String>();
+  int imageSum = 0;
+  String carModelID;
   List<FileImage> fileImageList = List<FileImage>();
   List<String> carImages = List<String>();
   bool autoRotate = true;
@@ -59,109 +61,109 @@ class DemoPageState extends State<DemoPage> {
   bool allowSwipeToRotate = true;
   Rotation_Direction rotationDirection = Rotation_Direction.anticlockwise;
   Duration frameChangeDuration = Duration(milliseconds: 30);
-  bool imagePrecached = false;
+  bool imagePreCached = false;
+  String fileName;
+  int imageIndex = 0;
 
   void setCarState() {
     if (mounted) {
       print("mounted");
       print("file array = ${fileImageList.length}");
       setState(() {
-        imagePrecached = true;
+        imagePreCached = true;
       });
     }
   }
 
   @override
   void initState() {
-    //* To load images from assets after first frame build up.
-    print("init called");
+    int carNumber = 0;
     super.initState();
     Categories brandModel = Categories();
-    print("1");
-     Future<Categories> carModel = getCategory(18, 1);
+    Future<Categories> carModel = getCategory(18, 1);
     carModel.then((value) {
-      print("2");
-
       brandModel = value;
       for (var category in brandModel.categories) {
-        for (var carMake360 in category.carMakeImage360) {
-          if (carMake360.type == 2) {
-            carColors360.add(carMake360.colorhex);
-            for(var carImage in carMake360.items)
-            {
-              carImages.add(carImage);
+        carModelID = category.id;
+        for (var carMakeImage360 in category.carMakeImage360) {
+          fileName = "Mod${category.id}";
+          if (carMakeImage360.type == 2) {
+            carColors360.add(carMakeImage360.colorhex);
+            fileName += "_Col${carMakeImage360.colorhex.substring(1)}";
+            imageSum += carMakeImage360.items.length;
+            for (int i = 0; i < carMakeImage360.items.length; i++) {
+              downloadFile(carMakeImage360.items[i], "${fileName}_${i + 1}.jpg")
+                  .then((value) {
+                carNumber++;
+                if (carNumber == imageSum) {
+                  initView();
+                }
+              });
             }
           }
         }
-        print("carImages is ${carImages.length}");
       }
-      print("3");
-      Future<bool> result = downloadImage(
-          "http://18.157.167.102:7066/Content/Images/CarMake/Image360/exterior/18/00008B/",
-          "00008B-subaruEgyptExterior");
-      // print("carColorCode = ${carColors360.length}");
     });
-
   }
 
   @override
   Widget build(BuildContext context) {
-
     CarBloc carBloc = CarBloc();
     return BlocListener(
       bloc: carBloc,
-      listener: (context, state) {
-        /*if (state is OnPressedState) {
-          print("OnPressedState clicked");
-          downloadImage();
-        }*/
-      },
+      listener: (context, state) {},
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-        ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 72.0),
-              child: (imagePrecached == true)
-                  ? CarColour(
-                      key: UniqueKey(),
-                      fileImageList: fileImageList,
-                      autoRotate: autoRotate,
-                      allowSwipeToRotate: allowSwipeToRotate,
-                      frameChangeDuration: frameChangeDuration,
-                      rotationCount: rotationCount,
-                      rotationDirection: rotationDirection,
-                      swipeSensitivity: swipeSensitivity,
-                      carColor360List: carColors360,
-                    )
-                  : Text("loading...."),
-            ),
+          appBar: AppBar(
+            title: Text(widget.title),
           ),
-        ),
-      ),
+          body: (imagePreCached == true)
+              ? CarColour(
+                  key: UniqueKey(),
+                  fileImageList: fileImageList,
+                  carModelID: carModelID,
+                  autoRotate: autoRotate,
+                  allowSwipeToRotate: allowSwipeToRotate,
+                  frameChangeDuration: frameChangeDuration,
+                  rotationCount: rotationCount,
+                  rotationDirection: rotationDirection,
+                  swipeSensitivity: swipeSensitivity,
+                  index: imageIndex,
+                  carColor360List: carColors360,
+                )
+              : Padding(
+                  padding: const EdgeInsets.only(top: 100.0, left: 170.0),
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.cyanAccent,
+                    valueColor: new AlwaysStoppedAnimation<Color>(Colors.red),
+                  )
+                )
+          ),
     );
   }
 
+  Future<void> initView() async {
+    Future<bool> result = downloadImage(
+        "$BASE_URL/Content/Images/CarMake/Image360/exterior/$carModelID/FFFFFF/",
+        "Mod${carModelID}_ColFFFFFF",
+        imageIndex);
+  }
+
   Future<void> updateImageList(String fileName) async {
-    print("updateImageList called");
     for (int i = 1; i <= 36; i++) {
-      await readImageFile("$fileName$i.jpg");
+      await readImageFile("${fileName}_$i.jpg");
     }
     setCarState();
   }
 
-  Future<bool> downloadImage(String url, String fileName) async {
+  Future<bool> downloadImage(String url, String fileName, int index) async {
     setState(() {
-      imagePrecached = false;
+      imageIndex = index;
+      imagePreCached = false;
       fileImageList.clear();
     });
-    print("downloadImage function called");
-    var e;
     try {
       for (int i = 1; i <= 36; i++) {
-        await _downloadFile("$url$i.jpg", "$fileName$i.jpg", i);
+        await downloadFile("$url$i.jpg", "${fileName}_$i.jpg");
       }
       await updateImageList(fileName);
       return Future.value(true);
@@ -171,18 +173,16 @@ class DemoPageState extends State<DemoPage> {
     }
   }
 
-  Future<void> _downloadFile(String url, String filename, int index) async {
+  Future<void> downloadFile(String url, String filename) async {
     String dir = (await getApplicationDocumentsDirectory()).path;
     String path = '$dir/$filename';
     try {
-      print("the path1 is = $path");
-      print("file location is ${File(path).existsSync()}");
       if (File(path).existsSync()) {
-        print("file location exist is, index = $index");
+        print("file location exist ");
       } else if (File(path).existsSync() == false) {
         File file = new File(path);
-        print("file location not exist is, index = $index");
-        print("url is $url");
+        print("file location not exist is");
+        print("file is $file");
         var req = await get(Uri.parse(url));
         var bytes = req.bodyBytes;
         await file.writeAsBytes(bytes);
@@ -196,10 +196,8 @@ class DemoPageState extends State<DemoPage> {
     try {
       String dir = (await getApplicationDocumentsDirectory()).path;
       String path = '$dir/$filename';
-      print("the path2 is = $path");
       File file = File(path);
       await fileImageList.add(FileImage(file));
-      //print("the file image is ${FileImage(file)}");
     } catch (e) {
       print("exception file is ${e.toString()}");
       return null;

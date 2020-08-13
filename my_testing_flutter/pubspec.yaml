@@ -31,6 +31,10 @@ dependencies:
   path_provider: ^1.4.4
   http: ^0.12.1
   flutter_bloc: ^3.2.0
+  toggle_switch: ^0.1.5
+  panorama: ^0.0.2
+  network_to_file_image: ^2.3.1
+
 
 dev_dependencies:
   flutter_test:

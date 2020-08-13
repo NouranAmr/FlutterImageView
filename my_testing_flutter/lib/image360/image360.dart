@@ -11,6 +11,7 @@ class Image360 extends StatefulWidget {
   final Duration frameChangeDuration;
   final Rotation_Direction rotationDirection;
   final Function(int currentImageIndex) onImageIndexChanged;
+  final int index;
 
   Image360({
     @required Key key,
@@ -21,6 +22,7 @@ class Image360 extends StatefulWidget {
     this.swipeSensitivity = 1,
     this.rotationDirection = Rotation_Direction.clockwise,
     this.frameChangeDuration = const Duration(milliseconds: 80),
+    this.index,
     this.onImageIndexChanged,
   }) : super(key: key);
 
@@ -30,6 +32,7 @@ class Image360 extends StatefulWidget {
 
 class _Image360State extends State<Image360> {
   int rotationIndex, sensitivity;
+  int counter = 0;
   double localPosition = 0.0;
   int rotationCompleted = 0;
   Function(int currentImageIndex) onImageIndexChanged;
@@ -39,14 +42,11 @@ class _Image360State extends State<Image360> {
     sensitivity = widget.swipeSensitivity;
     if (sensitivity < 1) {
       sensitivity = 1;
-    } else if (sensitivity > 5)
-    {
+    } else if (sensitivity > 5) {
       sensitivity = 5;
     }
     onImageIndexChanged = widget.onImageIndexChanged ?? (currentImageIndex) {};
-    rotationIndex = widget.rotationDirection == Rotation_Direction.anticlockwise
-        ? 0
-        : (widget.imageList.length - 1);
+    rotationIndex = widget.index;
     if (widget.autoRotate) {
       rotateImage();
     }
@@ -63,7 +63,6 @@ class _Image360State extends State<Image360> {
             localPosition = 0.0;
           },
           onHorizontalDragUpdate: (details) {
-            // Swipe check,if allowed than only will image move
             if (widget.allowSwipeToRotate) {
               if (details.delta.dx > 0) {
                 handleRightSwipe(details);
@@ -85,28 +84,19 @@ class _Image360State extends State<Image360> {
       await Future.delayed(widget.frameChangeDuration);
       if (mounted) {
         setState(() {
-          if (widget.rotationDirection == Rotation_Direction.anticlockwise) {
-            // Logic to bring the frame to initial position on cycle complete in positive direction
-            if (rotationIndex < widget.imageList.length - 1) {
-              rotationIndex++;
-            } else {
-              rotationCompleted++;
+          //print("counter is $counter");
+          onImageIndexChanged(rotationIndex);
+          if (counter != widget.imageList.length) {
+            rotationIndex++;
+            if (rotationIndex > widget.imageList.length - 1) {
               rotationIndex = 0;
             }
+            counter++;
           } else {
-            // Logic to bring the frame to initial position on cycle complete in negative direction
-            if (rotationIndex > 0) {
-              rotationIndex--;
-            } else {
-              rotationCompleted++;
-              rotationIndex = widget.imageList.length - 1;
-            }
+            rotationCompleted++;
           }
         });
-
-        onImageIndexChanged(rotationIndex);
       }
-      //Recursive call
       rotateImage();
     }
   }
@@ -122,7 +112,7 @@ class _Image360State extends State<Image360> {
     }
     if (originalIndex != rotationIndex) {
       setState(() {
-        if (rotationIndex < widget.imageList.length - 1) {
+        if (rotationIndex <= widget.imageList.length - 1) {
           rotationIndex = rotationIndex;
         } else {
           rotationIndex = 0;
@@ -145,7 +135,7 @@ class _Image360State extends State<Image360> {
     }
     if (originalIndex != rotationIndex) {
       setState(() {
-        if (rotationIndex > 0) {
+        if (rotationIndex >= 0) {
           rotationIndex = rotationIndex;
         } else {
           rotationIndex = widget.imageList.length - 1;

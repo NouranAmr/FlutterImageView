@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
-import 'package:mytestingflutter/response/CarSalesBrandModel.dart';
 import 'package:mytestingflutter/response/Categories.dart';
 import 'package:mytestingflutter/utils/Constants.dart';
 import 'package:http/http.dart';
